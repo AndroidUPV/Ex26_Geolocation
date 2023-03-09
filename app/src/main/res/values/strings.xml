@@ -1,0 +1,26 @@
+<!--
+  ~ Copyright (c) 2022
+  ~ David de Andrés and Juan Carlos Ruiz
+  ~ Development of apps for mobile devices
+  ~ Universitat Politècnica de València
+  -->
+
+<resources>
+    <string name="app_name">Ex26_Geolocation</string>
+    <!--Strings for the LocationFragment-->
+    <string name="latitude">Latitude:</string>
+    <string name="longitude">Longitude:</string>
+    <string name="address">Address:</string>
+    <!--Strings related to possible problems-->
+    <string name="no_location">No valid location yet.</string>
+    <string name="no_play_services">Google Play Services are not available. Please close the app, install Google Play Services and start the app again.</string>
+    <string name="no_permission">The app cannot operate as location permission has been denied.</string>
+    <string name="no_geocoding">There is no application available to translate the coordinates to an addres.</string>
+    <string name="unknown_problem">An unexpected problem happened. Please, try again later.</string>
+    <string name="no_translation">It was not possible to translate those coordinates into a human readable address.</string>
+    <string name="no_internet">There is no Internet connection. It is required to translate the coordinates into a human readable address.</string>
+    <!--Strings for the LocationRationaleDialogFragment-->
+    <string name="rationale_title">Access to your current location is required</string>
+    <string name="rationale_message">To display the address and coordinates of your current location you must grant the app permission to access your location.</string>
+    <string name="understood">Understood</string>
+</resources>

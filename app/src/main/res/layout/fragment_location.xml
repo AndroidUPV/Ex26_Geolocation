@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2022
+  ~ David de Andrés and Juan Carlos Ruiz
+  ~ Development of apps for mobile devices
+  ~ Universitat Politècnica de València
+  -->
+<!--Displays the current latitude, longitude, and human readable address in TextViews-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!--Displays the latitude-->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvLatitudeLabel"
+        style="@style/Style.App.TitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/latitude"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvLatitude"
+        style="@style/TextAppearance.AppCompat.Large"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tvLatitudeLabel"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="39.48264" />
+
+    <!--Displays the longitude-->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvLongitudeLabel"
+        style="@style/Style.App.TitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/longitude"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvLatitudeLabel" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvLongitude"
+        style="@style/TextAppearance.AppCompat.Large"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tvLongitudeLabel"
+        app:layout_constraintTop_toBottomOf="@id/tvLatitude"
+        tools:text="-0.34679" />
+
+    <!--Displays the human readable address-->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvAddressLabel"
+        style="@style/Style.App.TitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/address"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvLongitudeLabel" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvAddress"
+        style="@style/TextAppearance.AppCompat.Large"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvAddressLabel"
+        tools:text="Building 1G Universitat Politècnica de València" />
+</androidx.constraintlayout.widget.ConstraintLayout>
