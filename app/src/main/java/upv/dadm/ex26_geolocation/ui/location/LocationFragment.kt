@@ -13,7 +13,8 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.material.snackbar.Snackbar
@@ -32,8 +33,8 @@ import upv.dadm.ex26_geolocation.utils.NoInternetException
 @AndroidEntryPoint
 class LocationFragment : Fragment(R.layout.fragment_location) {
 
-    // Reference to the ViewModel
-    private val viewModel: LocationViewModel by viewModels()
+    // Reference to the ViewModel shared between Fragments
+    private val viewModel: LocationViewModel by activityViewModels()
 
     // Backing property to resource binding
     private var _binding: FragmentLocationBinding? = null
@@ -44,8 +45,10 @@ class LocationFragment : Fragment(R.layout.fragment_location) {
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) setupObservers()
-            else showSnackbar(R.string.no_permission)
+            if (isGranted) {
+                setupObservers()
+                viewModel.setRationaleUnderstood(false)
+            } else showSnackbar(R.string.no_permission)
         }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -56,21 +59,25 @@ class LocationFragment : Fragment(R.layout.fragment_location) {
         // Check whether Google Play Services are available
         if (isGooglePlayServicesAvailable()) {
 
+            // Request the required permission from the user once she has understood the rationale
+            viewModel.isRationaleUnderstood.observe(viewLifecycleOwner) { isUnderstood ->
+                if (isUnderstood) {
+                    requestPermission()
+                }
+            }
+
             // Check whether the required permission is granted
             if (isPermissionGranted())
             // Set up observers to react to changes in the UI state
                 setupObservers()
             // Check whether a rationale about the needs for this permission must be displayed
             else if (shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                if (viewModel.isRationaleUnderstood.value == false)
                 // Show a dialog with the required rationale
-                LocationRationaleDialogFragment(
-                    // Listener for the user to confirm that she understands the necessity of required permissions
-                    object : LocationRationaleDialogFragment.LocationRationaleListener {
-                        override fun onUnderstood() {
-                            // Request the required permission from the user
-                            requestPermission()
+                    findNavController().currentDestination?.getAction(R.id.actionLocationRationaleDialogFragment)
+                        ?.let {
+                            findNavController().navigate(R.id.actionLocationRationaleDialogFragment)
                         }
-                    }).show(parentFragmentManager, null)
             }
             // Request the required permission from the user
             else requestPermission()

@@ -28,6 +28,13 @@ class LocationViewModel @Inject constructor(
     // Current location
     val location = locationRepository.getLocationUpdates().asLiveData()
 
+    // Backing property for whether the user has understood the rationale for the required permissions
+    private val _isRationaleUnderstood = MutableLiveData(false)
+
+    // Whether the user has understood the rationale for the required permissions
+    val isRationaleUnderstood: LiveData<Boolean>
+        get() = _isRationaleUnderstood
+
     // Backing property for the human readable address of the current location
     private val _address = MutableLiveData<Address>()
 
@@ -58,6 +65,13 @@ class LocationViewModel @Inject constructor(
                     )
             }
         }
+    }
+
+    /**
+     * Sets whether the user has understood the rationale for the required permissions.
+     */
+    fun setRationaleUnderstood(understood: Boolean) {
+        _isRationaleUnderstood.value = understood
     }
 
     /**
