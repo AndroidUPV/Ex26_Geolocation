@@ -18,6 +18,6 @@ interface LocationRepository {
     /**
      * Returns a Flow with updates of the current location.
      */
-    fun getLocationUpdates(): Flow<Location?>
+    fun getLocationUpdates(permission: String): Flow<Location?>
 
 }

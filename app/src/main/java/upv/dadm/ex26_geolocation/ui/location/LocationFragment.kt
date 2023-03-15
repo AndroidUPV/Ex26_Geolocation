@@ -7,6 +7,7 @@
 
 package upv.dadm.ex26_geolocation.ui.location
 
+import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
@@ -43,12 +44,33 @@ class LocationFragment : Fragment(R.layout.fragment_location) {
     private val binding
         get() = _binding!!
 
+    // Request the required permission from the user and requests the current location if granted
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                setupObservers()
-                viewModel.setRationaleUnderstood(false)
-            } else showSnackbar(R.string.no_permission)
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            when {
+                permissions.getOrDefault(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    false
+                ) -> {
+                    // Request the current location after granting the access to a fine location
+                    viewModel.setPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    setupObservers()
+                    viewModel.setRationaleUnderstood(false)
+                }
+                permissions.getOrDefault(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    false
+                ) -> {
+                    // Request the current location after granting the access to a coarse location
+                    // THIS WILL NOT WORK IN THE EMULATOR, WHICH ONLY ALLOWS FOR GPS LOCATION
+                    viewModel.setPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    setupObservers()
+                    viewModel.setRationaleUnderstood(false)
+                }
+                else -> {
+                    showSnackbar(R.string.no_permission)
+                }
+            }
         }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -71,7 +93,7 @@ class LocationFragment : Fragment(R.layout.fragment_location) {
             // Set up observers to react to changes in the UI state
                 setupObservers()
             // Check whether a rationale about the needs for this permission must be displayed
-            else if (shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+            else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 if (viewModel.isRationaleUnderstood.value == false)
                 // Show a dialog with the required rationale
                     findNavController().currentDestination?.getAction(R.id.actionLocationRationaleDialogFragment)
@@ -102,14 +124,19 @@ class LocationFragment : Fragment(R.layout.fragment_location) {
     private fun isPermissionGranted() =
         ContextCompat.checkSelfPermission(
             requireContext(),
-            android.Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
     /**
      * Requests permissions to obtain the current location of the device.
      */
     private fun requestPermission() =
-        requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        requestPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
 
     /**
      * Sets up observers to react to changes in the UI state

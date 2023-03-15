@@ -7,6 +7,7 @@
 
 package upv.dadm.ex26_geolocation.data.location
 
+import android.Manifest
 import android.location.Location
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -17,6 +18,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import upv.dadm.ex26_geolocation.di.LocationProviderModule
 import java.util.concurrent.Executors
 import javax.inject.Inject
 
@@ -26,13 +28,14 @@ import javax.inject.Inject
  */
 class LocationDataSourceImpl @Inject constructor(
     private val fusedLocationProviderClient: FusedLocationProviderClient,
-    private val locationRequest: LocationRequest
+    @LocationProviderModule.HighAccuracyRequest private val highAccuracyRequest: LocationRequest,
+    @LocationProviderModule.BalancedPowerAccuracyRequest private val balancedPowerAccuracyRequest: LocationRequest,
 ) : LocationDataSource {
 
     /**
      * Returns a Flow with updates of the current location.
      */
-    override fun getLocationUpdates(): Flow<Location?> = callbackFlow {
+    override fun getLocationUpdates(permission: String): Flow<Location?> = callbackFlow {
         // Define the listener that will be executed whenever a new location is available
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(location: LocationResult) {
@@ -40,12 +43,24 @@ class LocationDataSourceImpl @Inject constructor(
                 trySend(location.lastLocation)
             }
         }
+        if (permission.isNotEmpty())
         // Register the listener to receive updates on current location
-        fusedLocationProviderClient.requestLocationUpdates(
-            locationRequest,
-            Executors.newSingleThreadExecutor(),
-            locationCallback
-        )
+            fusedLocationProviderClient.requestLocationUpdates(
+                when (permission) {
+                    Manifest.permission.ACCESS_FINE_LOCATION -> highAccuracyRequest
+                    Manifest.permission.ACCESS_COARSE_LOCATION -> balancedPowerAccuracyRequest
+                    // This should never happen
+                    else -> balancedPowerAccuracyRequest
+                },
+                Executors.newSingleThreadExecutor(),
+                locationCallback
+            )
+        else
+        // Provide an empty location
+            Location("").apply {
+                latitude = 0.0
+                longitude = 0.0
+            }
         // Unregister the listener when the channel is closed or cancelled
         awaitClose { fusedLocationProviderClient.removeLocationUpdates(locationCallback) }
     }

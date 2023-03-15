@@ -8,6 +8,7 @@
 package upv.dadm.ex26_geolocation.ui.location
 
 import android.location.Address
+import android.location.Location
 import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -25,15 +26,19 @@ class LocationViewModel @Inject constructor(
     private val geocodingRepository: GeocodingRepository
 ) : ViewModel() {
 
+    // Backing property for the permission currently granted by the user
+    private val _permission = MutableLiveData<String>()
+
     // Current location
-    val location = locationRepository.getLocationUpdates().asLiveData()
+    val location: LiveData<Location?> = _permission.switchMap { permission ->
+        locationRepository.getLocationUpdates(permission).asLiveData()
+    }
 
     // Backing property for whether the user has understood the rationale for the required permissions
     private val _isRationaleUnderstood = MutableLiveData(false)
 
     // Whether the user has understood the rationale for the required permissions
-    val isRationaleUnderstood: LiveData<Boolean>
-        get() = _isRationaleUnderstood
+    val isRationaleUnderstood: LiveData<Boolean> = _isRationaleUnderstood
 
     // Backing property for the human readable address of the current location
     private val _address = MutableLiveData<Address>()
@@ -46,6 +51,13 @@ class LocationViewModel @Inject constructor(
 
     // Error received
     val error: LiveData<Throwable?> = _error
+
+    /**
+     * Sets the permissions currently granted by the user.
+     */
+    fun setPermission(permission: String) {
+        _permission.value = permission
+    }
 
     /**
      * Translates the current location into a human readable address.

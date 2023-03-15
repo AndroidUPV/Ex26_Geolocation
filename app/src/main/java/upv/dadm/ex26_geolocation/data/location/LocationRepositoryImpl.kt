@@ -22,7 +22,7 @@ class LocationRepositoryImpl @Inject constructor(
     /**
      * Returns a Flow with updates of the current location.
      */
-    override fun getLocationUpdates(): Flow<Location?> =
-        locationDataSource.getLocationUpdates()
+    override fun getLocationUpdates(permission: String): Flow<Location?> =
+        locationDataSource.getLocationUpdates(permission)
 
 }

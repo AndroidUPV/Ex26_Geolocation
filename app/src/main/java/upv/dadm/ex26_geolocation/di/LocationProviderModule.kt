@@ -16,6 +16,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 /**
@@ -35,17 +36,35 @@ class LocationProviderModule {
     fun provideFusedLocationProviderClient(@ApplicationContext context: Context) =
         LocationServices.getFusedLocationProviderClient(context)
 
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class HighAccuracyRequest
+
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class BalancedPowerAccuracyRequest
+
     /**
      * Provides an instance of LocationRequest.
      */
     @Provides
     @Singleton
-    fun provideLocationRequest() =
-        // Obtain location updates every second, with high accuracy,
+    @HighAccuracyRequest
+    fun provideHighAccuracyLocationRequest() =
+    // Obtain location updates every second, with high accuracy,
         // if the location has changed in, at least, 50 metres
         LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
             .setMinUpdateDistanceMeters(50.0F)
             .build()
 
+    @Provides
+    @Singleton
+    @BalancedPowerAccuracyRequest
+    fun provideBalancedPowerAccuracyLocationRequest() =
+    // Obtain location updates every second, with balanced power and accuracy,
+        // if the location has changed in, at least, 50 metres
+        LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 1000)
+            .setMinUpdateDistanceMeters(50.0F)
+            .build()
 
 }
