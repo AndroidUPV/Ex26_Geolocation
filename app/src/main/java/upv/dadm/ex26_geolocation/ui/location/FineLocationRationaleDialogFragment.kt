@@ -18,7 +18,7 @@ import upv.dadm.ex26_geolocation.R
  * Displays the user a dialog with a description of why permissions must be granted
  * for a given for the desired functionality.
  */
-class LocationRationaleDialogFragment : DialogFragment() {
+class FineLocationRationaleDialogFragment : DialogFragment() {
 
     // Reference to the ViewModel shared between Fragments
     private val viewModel: LocationViewModel by activityViewModels()
@@ -26,10 +26,10 @@ class LocationRationaleDialogFragment : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         // Create the dialog with a single Button to dismiss it
         AlertDialog.Builder(requireContext())
-            .setTitle(R.string.rationale_title)
-            .setMessage(R.string.rationale_message)
+            .setTitle(R.string.rationale_title_fine)
+            .setMessage(R.string.rationale_message_fine)
             .setPositiveButton(R.string.understood) { _, _ ->
-                viewModel.setRationaleUnderstood(true)
+                viewModel.setFineLocationRationaleUnderstood(true)
                 dismiss()
             }
             .create()

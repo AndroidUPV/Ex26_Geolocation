@@ -46,11 +46,17 @@ class LocationViewModel @Inject constructor(
     // Visibility of the options menu to add a geofence
     val isGeofencingOnVisible: LiveData<Boolean> = _isGeofencingOnVisible
 
-    // Backing property for whether the user has understood the rationale for the required permissions
-    private val _isRationaleUnderstood = MutableLiveData(false)
+    // Backing property for whether the user has understood the necessity for location permission
+    private val _isFineLocationRationaleUnderstood = MutableLiveData(false)
 
-    // Whether the user has understood the rationale for the required permissions
-    val isRationaleUnderstood: LiveData<Boolean> = _isRationaleUnderstood
+    // Whether the user has understood the rationale for the necessity for location permission
+    val isFineLocationRationaleUnderstood: LiveData<Boolean> = _isFineLocationRationaleUnderstood
+
+    // Backing property for whether the user has understood the necessity for background location permission
+    private val _isBackgroundLocationRationaleUnderstood = MutableLiveData(false)
+
+    // Whether the user has understood the rationale for the necessity for background location permission
+    val isBackgroundLocationRationaleUnderstood: LiveData<Boolean> = _isBackgroundLocationRationaleUnderstood
 
     // Backing property for the human readable address of the current location
     private val _address = MutableLiveData<Address>()
@@ -92,10 +98,17 @@ class LocationViewModel @Inject constructor(
     }
 
     /**
-     * Sets whether the user has understood the rationale for the required permissions.
+     * Sets whether the user has understood the rationale for the necessity of location permissions.
      */
-    fun setRationaleUnderstood(understood: Boolean) {
-        _isRationaleUnderstood.value = understood
+    fun setFineLocationRationaleUnderstood(understood: Boolean) {
+        _isFineLocationRationaleUnderstood.value = understood
+    }
+
+    /**
+     * Sets whether the user has understood the rationale for the necessity of background location permissions.
+     */
+    fun setBackgroundLocationRationaleUnderstood(understood: Boolean) {
+        _isBackgroundLocationRationaleUnderstood.value = understood
     }
 
     /**

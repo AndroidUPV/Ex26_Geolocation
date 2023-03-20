@@ -50,12 +50,13 @@ import javax.inject.Inject
  */
 // The Hilt annotation @AndroidEntryPoint is required to receive dependencies from its parent class
 @AndroidEntryPoint
-class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
+class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
 
     // Reference to the ViewModel shared between Fragments
     private val viewModel: LocationViewModel by activityViewModels()
 
-    @Inject lateinit var geofencingRequest: GeofencingRequest
+    @Inject
+    lateinit var geofencingRequest: GeofencingRequest
     private lateinit var geofencingClient: GeofencingClient
     private lateinit var pendingIntent: PendingIntent
 
@@ -67,7 +68,40 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
         get() = _binding!!
 
     // Request the required permission from the user and requests the current location if granted
-    private val requestPermissionsLauncher =
+    private val requestLocationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            when {
+                permissions.getOrDefault(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    false
+                ) -> {
+                    // Request the current location after granting the access to a fine location
+                    viewModel.setPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    setupObservers()
+                    viewModel.setFineLocationRationaleUnderstood(false)
+                    // Create the options menu after enabling geofencing
+                    viewModel.setGeofencingEnabled(true)
+
+                }
+                permissions.getOrDefault(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    false
+                ) -> {
+                    // Request the current location after granting the access to a coarse location
+                    // THIS WILL NOT WORK IN THE EMULATOR, WHICH ONLY ALLOWS FOR GPS LOCATION
+                    // Geofencing is not enabled, as it requires access to fine location
+                    viewModel.setPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    setupObservers()
+                    viewModel.setFineLocationRationaleUnderstood(false)
+                }
+                else -> {
+                    showSnackbar(R.string.no_permission)
+                }
+            }
+        }
+
+    // Request the required permission from the user and requests the current location if granted
+    private val requestBackgroundPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             when {
                 permissions.getOrDefault(
@@ -83,8 +117,8 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
                             false
                         )
                     ) setupGeofencing()
-                    setupObservers()
-                    viewModel.setRationaleUnderstood(false)
+                    addGeofence()
+                    viewModel.setBackgroundLocationRationaleUnderstood(false)
                 }
                 permissions.getOrDefault(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -94,8 +128,7 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
                     // THIS WILL NOT WORK IN THE EMULATOR, WHICH ONLY ALLOWS FOR GPS LOCATION
                     // Geofencing is not enabled, as it requires access to fine location
                     viewModel.setPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
-                    setupObservers()
-                    viewModel.setRationaleUnderstood(false)
+                    viewModel.setBackgroundLocationRationaleUnderstood(false)
                 }
                 else -> {
                     showSnackbar(R.string.no_permission)
@@ -115,65 +148,49 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
         // Get the automatically generated view binding for the layout resource
         _binding = FragmentLocationBinding.bind(view)
 
+        // Request the location permission from the user once she has understood the rationale
+        viewModel.isFineLocationRationaleUnderstood.observe(viewLifecycleOwner) { isUnderstood ->
+            if (isUnderstood) {
+                // Request permission for just geolocation at first
+                requestFineLocationPermission()
+            }
+        }
+
+        if (VERSION.SDK_INT > 28)
+        // Request the background location permission from the user once she has understood the rationale
+            viewModel.isBackgroundLocationRationaleUnderstood.observe(viewLifecycleOwner) { isUnderstood ->
+                if (isUnderstood) {
+                    // Request permission for background permission
+                    requestBackgroundPermissions()
+                }
+            }
+
         // Check whether Google Play Services are available
         if (isGooglePlayServicesAvailable()) {
 
-            // Request the required permission from the user once she has understood the rationale
-            viewModel.isRationaleUnderstood.observe(viewLifecycleOwner) { isUnderstood ->
-                if (isUnderstood) {
-                    // Request permissions for both geolocation and background location
-                    if (VERSION.SDK_INT > 28) requestPermissions()
-                    // Request permission for just geolocation
-                    else requestFineLocationPermission()
-                }
+            // Check permission just for geolocation
+            if (isFineLocationPermissionsGranted()) {
+                viewModel.setPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                // Set up geofencing
+                setupGeofencing()
+                // Set up observers to react to changes in the UI state
+                setupObservers()
+                // Create the options menu after enabling geofencing
+                viewModel.setGeofencingEnabled(true)
             }
-
-            // Geofencing requires background location permission for API > 28
-            if (VERSION.SDK_INT > 28) {
-                // Check permissions for geolocation and background location
-                if (arePermissionsGranted()) {
-                    //startGeolocation()
-                    viewModel.setPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                    // Set up geofencing
-                    setupGeofencing()
-                    // Set up observers to react to changes in the UI state
-                    setupObservers()
-                    // Check whether a rationale about the needs for these permissions must be displayed
-                } else if (
-                    shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ||
-                    shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                ) {
-                    if (viewModel.isRationaleUnderstood.value == false)
-                    // Show a dialog with the required rationale
-                        findNavController().currentDestination?.getAction(R.id.actionLocationRationaleDialogFragment)
-                            ?.let {
-                                findNavController().navigate(R.id.actionLocationRationaleDialogFragment)
-                            }
-                }
-                // Request the required permissions from the user
-                else requestPermissions()
-            } else {
-                // Check permission just for geolocation
-                if (isFineLocationPermissionsGranted()) {
-                    viewModel.setPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                    // Set up geofencing as background location permission is not required (API < 29)
-                    setupGeofencing()
-                    // Set up observers to react to changes in the UI state
-                    setupObservers()
-                    // Check whether a rationale about the needs for this permission must be displayed
-                } else if (
-                    shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
-                ) {
-                    if (viewModel.isRationaleUnderstood.value == false)
-                    // Show a dialog with the required rationale
-                        findNavController().currentDestination?.getAction(R.id.actionLocationRationaleDialogFragment)
-                            ?.let {
-                                findNavController().navigate(R.id.actionLocationRationaleDialogFragment)
-                            }
-                }
-                // Request the required permission from the user
-                else requestFineLocationPermission()
+            // Check whether a rationale about the needs for this permission must be displayed
+            else if (
+                shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
+            ) {
+                if (viewModel.isFineLocationRationaleUnderstood.value == false)
+                // Show a dialog with the required rationale
+                    findNavController().currentDestination?.getAction(R.id.actionShowFineLocationRationale)
+                        ?.let {
+                            findNavController().navigate(R.id.actionShowFineLocationRationale)
+                        }
             }
+            // Request the required permission from the user
+            else requestFineLocationPermission()
 
         }
         // Otherwise, display a message
@@ -188,13 +205,6 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
     private fun isGooglePlayServicesAvailable() =
         GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(requireContext()) == ConnectionResult.SUCCESS
-
-    /**
-     * Checks whether geolocation and background location permissions are already granted.
-     */
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun arePermissionsGranted() =
-        isFineLocationPermissionsGranted() and isBackgroundLocationPermissionsGranted()
 
     /**
      * Checks whether geolocation permission is already granted.
@@ -219,7 +229,7 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
      * Requests permissions to obtain the current location of the device.
      */
     private fun requestFineLocationPermission() =
-        requestPermissionsLauncher.launch(
+        requestLocationPermissionLauncher.launch(
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -230,14 +240,18 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
      * Requests permissions to obtain the current location of the device
      * while the application is both in foreground and background.
      */
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun requestPermissions() =
-        requestPermissionsLauncher.launch(
-            arrayOf(
+    private fun requestBackgroundPermissions() =
+        requestBackgroundPermissionsLauncher.launch(
+            if (VERSION.SDK_INT < 29) arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+            else arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             )
+
         )
 
     private fun setupGeofencing() {
@@ -278,9 +292,6 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
         val notificationManager =
             requireActivity().getSystemService(NotificationManager::class.java) as NotificationManager
         notificationManager.createNotificationChannel(notificationChannel)
-
-        // Create the options menu after enabling geofencing
-        viewModel.setGeofencingEnabled(true)
     }
 
     /**
@@ -359,23 +370,38 @@ class LocationFragment: Fragment(R.layout.fragment_location), MenuProvider {
                     (viewModel.isGeofencingOnVisible.value?.not() ?: false)
     }
 
+    /**
+     * Add a geofence.
+     */
+    private fun addGeofence() {
+        geofencingClient.addGeofences(geofencingRequest, pendingIntent).run {
+            addOnSuccessListener { showSnackbar(R.string.geofence_added) }
+            addOnFailureListener { showSnackbar(R.string.geofence_added_failed) }
+            viewModel.setGeofenceOnVisible(false)
+        }
+    }
+
     // Reacts to the selection of action elements
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
         when (menuItem.itemId) {
 
             // Add a geofence
             R.id.mGeofencingOn -> {
-                // Check the required permissions are still granted
-                if (isFineLocationPermissionsGranted() && (VERSION.SDK_INT < 29 || isBackgroundLocationPermissionsGranted())) {
-                    geofencingClient.addGeofences(geofencingRequest, pendingIntent).run {
-                        addOnSuccessListener { showSnackbar(R.string.geofence_added) }
-                        addOnFailureListener { showSnackbar(R.string.geofence_added_failed) }
-                    }
-                } else {
-                    showSnackbar(R.string.geofence_no_permission)
-                }
+                // Check the required permissions are still granted to add a geofence
+                if (isFineLocationPermissionsGranted() && (VERSION.SDK_INT < 29 || isBackgroundLocationPermissionsGranted()))
+                    addGeofence()
+                // Check whether a rationale about the needs for these permissions must be displayed
+                else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                    shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                ) {
+                    if (viewModel.isBackgroundLocationRationaleUnderstood.value == false)
+                    // Show a dialog with the required rationale
+                        findNavController().currentDestination?.getAction(R.id.actionShowBackgroundLocationRationale)
+                            ?.let {
+                                findNavController().navigate(R.id.actionShowBackgroundLocationRationale)
+                            }
+                } else requestBackgroundPermissions()
                 // Update the options menu
-                viewModel.setGeofenceOnVisible(false)
                 true
             }
 

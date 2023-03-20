@@ -25,8 +25,10 @@
     <string name="no_internet">There is no Internet connection. It is required to translate the coordinates into a human readable address.</string>
     <string name="geofence_no_permission">Fine location and background location permissions are required to add geofences.</string>
     <!--Strings for the LocationRationaleDialogFragment-->
-    <string name="rationale_title">Access to your current location is required</string>
-    <string name="rationale_message">To display the address and coordinates of your current location you must grant the app permission to access your location.\nAccess to your current location while the application is in background is required to get notifications when entering/exiting selected places.</string>
+    <string name="rationale_title_fine">Access to your current location is required</string>
+    <string name="rationale_message_fine">To display the address and coordinates of your current location you must grant the app permission to access your location..</string>
+    <string name="rationale_title_background">Access to your current location in background is required</string>
+    <string name="rationale_message_background">To display the address and coordinates of your current location you must grant the app permission to access your location.\n\nAccess to your current location while the application is in background is required to get notifications when entering/exiting selected places.</string>
     <string name="understood">Understood</string>
     <!--Strings for the options menu-->
     <string name="geofencing_on">Add a geofence to ETSINF</string>

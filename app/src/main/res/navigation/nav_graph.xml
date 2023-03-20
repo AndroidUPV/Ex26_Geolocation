@@ -13,13 +13,20 @@
     <fragment
         android:id="@+id/locationFragment"
         android:name="upv.dadm.ex26_geolocation.ui.location.LocationFragment"
-        android:label="@string/app_name" >
+        android:label="@string/app_name">
         <action
-            android:id="@+id/actionLocationRationaleDialogFragment"
+            android:id="@+id/actionShowFineLocationRationale"
             app:destination="@id/locationRationaleDialogFragment" />
+        <action
+            android:id="@+id/actionShowBackgroundLocationRationale"
+            app:destination="@id/backgroundLocationRationaleDialogFragment" />
     </fragment>
     <dialog
         android:id="@+id/locationRationaleDialogFragment"
-        android:name="upv.dadm.ex26_geolocation.ui.location.LocationRationaleDialogFragment"
+        android:name="upv.dadm.ex26_geolocation.ui.location.FineLocationRationaleDialogFragment"
         android:label="LocationRationaleDialogFragment" />
+    <dialog
+        android:id="@+id/backgroundLocationRationaleDialogFragment"
+        android:name="upv.dadm.ex26_geolocation.ui.location.BackgroundLocationRationaleDialogFragment"
+        android:label="BackgroundLocationRationaleDialogFragment" />
 </navigation>
