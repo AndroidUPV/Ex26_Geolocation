@@ -34,6 +34,18 @@ class LocationViewModel @Inject constructor(
         locationRepository.getLocationUpdates(permission).asLiveData()
     }
 
+    // Backing property for geofencing being enabled
+    private val _isGeofencingEnabled = MutableLiveData(false)
+
+    // Geofencing is enabled
+    val isGeofencingEnabled: LiveData<Boolean> = _isGeofencingEnabled
+
+    // Backing property for the visibility of the options menu to add a geofence
+    private val _isGeofencingOnVisible = MutableLiveData(true)
+
+    // Visibility of the options menu to add a geofence
+    val isGeofencingOnVisible: LiveData<Boolean> = _isGeofencingOnVisible
+
     // Backing property for whether the user has understood the rationale for the required permissions
     private val _isRationaleUnderstood = MutableLiveData(false)
 
@@ -93,4 +105,17 @@ class LocationViewModel @Inject constructor(
         _error.value = null
     }
 
+    /**
+     * Sets whether geofencing is enabled.
+     */
+    fun setGeofencingEnabled(isEnabled: Boolean) {
+        _isGeofencingEnabled.value = isEnabled
+    }
+
+    /**
+     * Sets whether the options menu for adding a geofence should be visible.
+     */
+    fun setGeofenceOnVisible(isVisible: Boolean) {
+        _isGeofencingOnVisible.value = isVisible
+    }
 }
