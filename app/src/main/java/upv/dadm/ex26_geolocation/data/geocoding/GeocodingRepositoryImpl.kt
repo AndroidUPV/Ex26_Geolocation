@@ -30,14 +30,12 @@ class GeocodingRepositoryImpl @Inject constructor(
     override suspend fun getAddress(location: Location): Result<Address> =
         // Obtain the address if there is any Geocoder available
         if (Geocoder.isPresent())
-            // Obtain the address if there is Internet connectivity available
+        // Obtain the address if there is Internet connectivity available
             if (connectivityChecker.isConnectionAvailable())
                 geocodingDataSource.getAddress(location)
             // Otherwise, an error message
-            else
-                Result.failure(NoInternetException())
+            else Result.failure(NoInternetException())
         // Otherwise, an error message
-        else
-            Result.failure(NoGeocoderException())
+        else Result.failure(NoGeocoderException())
 
 }

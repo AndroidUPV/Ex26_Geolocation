@@ -261,21 +261,13 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
         val intent = Intent(context, GeofencingBroadcastReceiver::class.java)
             .setAction(ACTION_GEOFENCE_EVENT)
         // Flags must state the mutability of the PendingIntent for API > 30
-        if (VERSION.SDK_INT > 30)
-            pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-            )
-        else
-            pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT
-            )
-
+        pendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
+            if (VERSION.SDK_INT > 30) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            else PendingIntent.FLAG_UPDATE_CURRENT
+        )
         // Channel where notifications will be posted
         val notificationChannel = NotificationChannel(
             CHANNEL_ID,

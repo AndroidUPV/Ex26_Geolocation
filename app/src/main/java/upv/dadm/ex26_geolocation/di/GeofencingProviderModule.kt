@@ -73,7 +73,7 @@ class GeofencingProviderModule {
             .setSmallIcon(R.drawable.ic_geofencing_on)
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(context.getString(R.string.notification_enter))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
     /**
@@ -87,6 +87,6 @@ class GeofencingProviderModule {
             .setSmallIcon(R.drawable.ic_geofencing_on)
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(context.getString(R.string.notification_exit))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 }
