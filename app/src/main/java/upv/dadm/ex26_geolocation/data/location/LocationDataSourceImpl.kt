@@ -9,10 +9,8 @@ package upv.dadm.ex26_geolocation.data.location
 
 import android.Manifest
 import android.location.Location
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
+import android.os.Looper
+import com.google.android.gms.location.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -52,8 +50,8 @@ class LocationDataSourceImpl @Inject constructor(
                     // This should never happen
                     else -> balancedPowerAccuracyRequest
                 },
-                Executors.newSingleThreadExecutor(),
-                locationCallback
+                locationCallback,
+                Looper.getMainLooper()
             )
         else
         // Provide an empty location
