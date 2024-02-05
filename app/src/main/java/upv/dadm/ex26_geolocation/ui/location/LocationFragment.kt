@@ -15,6 +15,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -31,6 +32,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -39,6 +43,7 @@ import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import upv.dadm.ex26_geolocation.CHANNEL_ID
 import upv.dadm.ex26_geolocation.GeofencingBroadcastReceiver
 import upv.dadm.ex26_geolocation.R
@@ -87,6 +92,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
                     viewModel.setGeofencingEnabled(true)
 
                 }
+
                 permissions.getOrDefault(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     false
@@ -98,6 +104,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
                     setupObservers()
                     viewModel.setFineLocationRationaleUnderstood(false)
                 }
+
                 else -> {
                     showSnackbar(R.string.no_permission)
                 }
@@ -124,6 +131,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
                     addGeofence()
                     viewModel.setBackgroundLocationRationaleUnderstood(false)
                 }
+
                 permissions.getOrDefault(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     false
@@ -134,6 +142,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
                     viewModel.setPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
                     viewModel.setBackgroundLocationRationaleUnderstood(false)
                 }
+
                 else -> {
                     showSnackbar(R.string.no_permission)
                 }
@@ -152,20 +161,28 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
         // Get the automatically generated view binding for the layout resource
         _binding = FragmentLocationBinding.bind(view)
 
-        // Request the location permission from the user once she has understood the rationale
-        viewModel.isFineLocationRationaleUnderstood.observe(viewLifecycleOwner) { isUnderstood ->
-            if (isUnderstood) {
-                // Request permission for just geolocation at first
-                requestFineLocationPermission()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Request the location permission from the user once she has understood the rationale
+                viewModel.isFineLocationRationaleUnderstood.collect { isUnderstood ->
+                    if (isUnderstood) {
+                        // Request permission for just geolocation at first
+                        requestFineLocationPermission()
+                    }
+                }
             }
         }
 
         if (VERSION.SDK_INT > 28)
-        // Request the background location permission from the user once she has understood the rationale
-            viewModel.isBackgroundLocationRationaleUnderstood.observe(viewLifecycleOwner) { isUnderstood ->
-                if (isUnderstood) {
-                    // Request permission for background permission
-                    requestBackgroundPermissions()
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    // Request the background location permission from the user once she has understood the rationale
+                    viewModel.isBackgroundLocationRationaleUnderstood.collect { isUnderstood ->
+                        if (isUnderstood) {
+                            // Request permission for background permission
+                            requestBackgroundPermissions()
+                        }
+                    }
                 }
             }
 
@@ -186,7 +203,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
             else if (
                 shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
             ) {
-                if (viewModel.isFineLocationRationaleUnderstood.value == false)
+                if (!viewModel.isFineLocationRationaleUnderstood.value)
                 // Show a dialog with the required rationale
                     findNavController().currentDestination?.getAction(R.id.actionShowFineLocationRationale)
                         ?.let {
@@ -286,7 +303,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
         }
         // Create the desired notification channel
         val notificationManager =
-            requireActivity().getSystemService(NotificationManager::class.java) as NotificationManager
+            requireActivity().getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(notificationChannel)
     }
 
@@ -294,48 +311,67 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
      * Sets up observers to react to changes in the UI state
      */
     private fun setupObservers() {
-        // Display the latitude and longitude of the current location
-        viewModel.location.observe(viewLifecycleOwner) { location ->
-            if (location == null)
-            // Display a message when the current location is null
-                showSnackbar(R.string.no_location)
-            else {
-                binding.tvLatitude.text = location.latitude.toString()
-                binding.tvLongitude.text = location.longitude.toString()
-                // Translate the current location into a human readable address
-                viewModel.getAddress()
-            }
-        }
-        // Display the current location as a human readable address
-        viewModel.address.observe(viewLifecycleOwner) { address ->
-            binding.tvAddress.text = address.getAddressLine(0)
-        }
-        // Display an error message when something has gone wrong
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            if (error != null) {
-                // Select the message according to the received exception
-                val messageId = when (error) {
-                    is NoGeocoderException -> R.string.no_geocoding
-                    is NoInternetException -> R.string.no_internet
-                    is GeocodingException -> R.string.no_translation
-                    else -> R.string.unknown_problem
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Display the latitude and longitude of the current location
+                viewModel.location.collect { location ->
+                    if (location == null)
+                        // Display a message when the current location is null
+                        showSnackbar(R.string.no_location)
+                    else {
+                        binding.tvLatitude.text = location.latitude.toString()
+                        binding.tvLongitude.text = location.longitude.toString()
+                        // Translate the current location into a human readable address
+                        viewModel.getAddress()
+                    }
                 }
-                // Display the message
-                showSnackbar(messageId)
-                // Clear the address TextView
-                binding.tvAddress.text = ""
-                // Clear the error flag
-                viewModel.clearError()
             }
         }
-        // Enable the options menu when geofencing is available
-        viewModel.isGeofencingEnabled.observe(viewLifecycleOwner) { isGeofencingEnabled ->
-            if (isGeofencingEnabled) requireActivity().addMenuProvider(this)
-            else requireActivity().removeMenuProvider(this)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Display the current location as a human readable address
+                viewModel.address.collect { address ->
+                    binding.tvAddress.text = address?.getAddressLine(0) ?: ""
+                }
+            }
         }
-        // Recreate the option menu after the user selects an action element
-        viewModel.isGeofencingOnVisible.observe(viewLifecycleOwner) { _ ->
-            requireActivity().invalidateMenu()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Display an error message when something has gone wrong
+                viewModel.error.collect { error ->
+                    error?.let { throwable ->
+                        // Select the message according to the received exception
+                        val messageId = when (throwable) {
+                            is NoGeocoderException -> R.string.no_geocoding
+                            is NoInternetException -> R.string.no_internet
+                            is GeocodingException -> R.string.no_translation
+                            else -> R.string.unknown_problem
+                        }
+                        // Display the message
+                        showSnackbar(messageId)
+                        // Clear the address TextView
+                        binding.tvAddress.text = ""
+                        // Clear the error flag
+                        viewModel.clearError()
+                    }
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Enable the options menu when geofencing is available
+                viewModel.isGeofencingEnabled.collect { isGeofencingEnabled ->
+                    if (isGeofencingEnabled) requireActivity().addMenuProvider(this@LocationFragment)
+                    else requireActivity().removeMenuProvider(this@LocationFragment)
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Recreate the option menu after the user selects an action element
+                viewModel.isGeofencingOnVisible.collect { requireActivity().invalidateMenu() }
+            }
         }
     }
 
@@ -359,11 +395,9 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
     override fun onPrepareMenu(menu: Menu) {
         super.onPrepareMenu(menu)
         menu.findItem(R.id.mGeofencingOn).isVisible =
-            (viewModel.isGeofencingEnabled.value ?: true) and
-                    (viewModel.isGeofencingOnVisible.value ?: true)
+            (viewModel.isGeofencingEnabled.value) and (viewModel.isGeofencingOnVisible.value)
         menu.findItem(R.id.mGeofencingOff).isVisible =
-            (viewModel.isGeofencingEnabled.value ?: true) and
-                    (viewModel.isGeofencingOnVisible.value?.not() ?: false)
+            (viewModel.isGeofencingEnabled.value) and (!viewModel.isGeofencingOnVisible.value)
     }
 
     /**
@@ -390,7 +424,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
                 else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ||
                     shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 ) {
-                    if (viewModel.isBackgroundLocationRationaleUnderstood.value == false)
+                    if (!viewModel.isBackgroundLocationRationaleUnderstood.value)
                     // Show a dialog with the required rationale
                         findNavController().currentDestination?.getAction(R.id.actionShowBackgroundLocationRationale)
                             ?.let {

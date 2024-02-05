@@ -12,9 +12,15 @@
 package upv.dadm.ex26_geolocation.ui.location
 
 import android.location.Address
-import android.location.Location
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import upv.dadm.ex26_geolocation.data.geocoding.GeocodingRepository
 import upv.dadm.ex26_geolocation.data.location.LocationRepository
@@ -31,71 +37,74 @@ class LocationViewModel @Inject constructor(
 ) : ViewModel() {
 
     // Backing property for the permission currently granted by the user
-    private val _permission = MutableLiveData<String>()
+    private val _permission = MutableStateFlow("")
 
     // Current location
-    val location: LiveData<Location?> = _permission.switchMap { permission ->
-        locationRepository.getLocationUpdates(permission).asLiveData()
-    }
+    val location = _permission.flatMapLatest { permission ->
+        locationRepository.getLocationUpdates(permission)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = null
+    )
 
     // Backing property for geofencing being enabled
-    private val _isGeofencingEnabled = MutableLiveData(false)
+    private val _isGeofencingEnabled = MutableStateFlow(false)
 
     // Geofencing is enabled
-    val isGeofencingEnabled: LiveData<Boolean> = _isGeofencingEnabled
+    val isGeofencingEnabled = _isGeofencingEnabled.asStateFlow()
 
     // Backing property for the visibility of the options menu to add a geofence
-    private val _isGeofencingOnVisible = MutableLiveData(true)
+    private val _isGeofencingOnVisible = MutableStateFlow(true)
 
     // Visibility of the options menu to add a geofence
-    val isGeofencingOnVisible: LiveData<Boolean> = _isGeofencingOnVisible
+    val isGeofencingOnVisible = _isGeofencingOnVisible.asStateFlow()
 
     // Backing property for whether the user has understood the necessity for location permission
-    private val _isFineLocationRationaleUnderstood = MutableLiveData(false)
+    private val _isFineLocationRationaleUnderstood = MutableStateFlow(false)
 
     // Whether the user has understood the rationale for the necessity for location permission
-    val isFineLocationRationaleUnderstood: LiveData<Boolean> = _isFineLocationRationaleUnderstood
+    val isFineLocationRationaleUnderstood = _isFineLocationRationaleUnderstood.asStateFlow()
 
     // Backing property for whether the user has understood the necessity for background location permission
-    private val _isBackgroundLocationRationaleUnderstood = MutableLiveData(false)
+    private val _isBackgroundLocationRationaleUnderstood = MutableStateFlow(false)
 
     // Whether the user has understood the rationale for the necessity for background location permission
-    val isBackgroundLocationRationaleUnderstood: LiveData<Boolean> = _isBackgroundLocationRationaleUnderstood
+    val isBackgroundLocationRationaleUnderstood =
+        _isBackgroundLocationRationaleUnderstood.asStateFlow()
 
     // Backing property for the human readable address of the current location
-    private val _address = MutableLiveData<Address>()
+    private val _address = MutableStateFlow<Address?>(null)
 
     // Human readable address of the current location
-    val address: LiveData<Address> = _address
+    val address = _address.asStateFlow()
 
     // Backing property for the error received
-    private val _error = MutableLiveData<Throwable?>()
+    private val _error = MutableStateFlow<Throwable?>(null)
 
     // Error received
-    val error: LiveData<Throwable?> = _error
+    val error = _error.asStateFlow()
 
     /**
      * Sets the permissions currently granted by the user.
      */
-    fun setPermission(permission: String) {
-        _permission.value = permission
-    }
+    fun setPermission(permission: String) =
+        _permission.update { permission }
 
     /**
      * Translates the current location into a human readable address.
      */
     fun getAddress() {
         // Caches the current location, in case it changes along this operation
-        val cachedLocation = location.value
-        if (cachedLocation != null) {
+        location.value?.let { cachedLocation ->
             // As it is a blocking operation it should be executed in a thread
             viewModelScope.launch {
                 // Get a human readable address form the current location
                 geocodingRepository.getAddress(cachedLocation)
                     // Check the result
                     .fold(
-                        onSuccess = { result -> _address.value = result },
-                        onFailure = { throwable -> _error.value = throwable }
+                        onSuccess = { result -> _address.update { result } },
+                        onFailure = { throwable -> _error.update { throwable } }
                     )
             }
         }
@@ -104,35 +113,30 @@ class LocationViewModel @Inject constructor(
     /**
      * Sets whether the user has understood the rationale for the necessity of location permissions.
      */
-    fun setFineLocationRationaleUnderstood(understood: Boolean) {
-        _isFineLocationRationaleUnderstood.value = understood
-    }
+    fun setFineLocationRationaleUnderstood(understood: Boolean) =
+        _isFineLocationRationaleUnderstood.update { understood }
 
     /**
      * Sets whether the user has understood the rationale for the necessity of background location permissions.
      */
-    fun setBackgroundLocationRationaleUnderstood(understood: Boolean) {
-        _isBackgroundLocationRationaleUnderstood.value = understood
-    }
+    fun setBackgroundLocationRationaleUnderstood(understood: Boolean) =
+        _isBackgroundLocationRationaleUnderstood.update { understood }
 
     /**
      * Clears the error received.
      */
-    fun clearError() {
-        _error.value = null
-    }
+    fun clearError() =
+        _error.update { null }
 
     /**
      * Sets whether geofencing is enabled.
      */
-    fun setGeofencingEnabled(isEnabled: Boolean) {
-        _isGeofencingEnabled.value = isEnabled
-    }
+    fun setGeofencingEnabled(isEnabled: Boolean) =
+        _isGeofencingEnabled.update { isEnabled }
 
     /**
      * Sets whether the options menu for adding a geofence should be visible.
      */
-    fun setGeofenceOnVisible(isVisible: Boolean) {
-        _isGeofencingOnVisible.value = isVisible
-    }
+    fun setGeofenceOnVisible(isVisible: Boolean) =
+        _isGeofencingOnVisible.update { isVisible }
 }
