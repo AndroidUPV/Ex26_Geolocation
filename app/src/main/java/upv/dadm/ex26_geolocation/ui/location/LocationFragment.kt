@@ -316,7 +316,7 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
                 // Display the latitude and longitude of the current location
                 viewModel.location.collect { location ->
                     if (location == null)
-                        // Display a message when the current location is null
+                    // Display a message when the current location is null
                         showSnackbar(R.string.no_location)
                     else {
                         binding.tvLatitude.text = location.latitude.toString()
@@ -362,7 +362,11 @@ class LocationFragment : Fragment(R.layout.fragment_location), MenuProvider {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Enable the options menu when geofencing is available
                 viewModel.isGeofencingEnabled.collect { isGeofencingEnabled ->
-                    if (isGeofencingEnabled) requireActivity().addMenuProvider(this@LocationFragment)
+                    if (isGeofencingEnabled) requireActivity().addMenuProvider(
+                        this@LocationFragment,
+                        viewLifecycleOwner,
+                        Lifecycle.State.STARTED
+                    )
                     else requireActivity().removeMenuProvider(this@LocationFragment)
                 }
             }
