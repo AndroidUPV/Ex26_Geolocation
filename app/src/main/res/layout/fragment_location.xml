@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright (c) 2022-2023 Universitat Politècnica de València
+  ~ Copyright (c) 2022-2024 Universitat Politècnica de València
   ~ Authors: David de Andrés and Juan Carlos Ruiz
   ~          Fault-Tolerant Systems
   ~          Instituto ITACA
@@ -14,7 +14,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="@dimen/margins">
 
     <!--Displays the latitude-->
     <com.google.android.material.textview.MaterialTextView
@@ -31,7 +31,7 @@
         style="@style/TextAppearance.AppCompat.Large"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="@dimen/margins"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/tvLatitudeLabel"
         app:layout_constraintTop_toTopOf="parent"
@@ -43,7 +43,7 @@
         style="@style/Style.App.TitleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/margins"
         android:text="@string/longitude"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvLatitudeLabel" />
@@ -53,8 +53,8 @@
         style="@style/TextAppearance.AppCompat.Large"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginStart="@dimen/margins"
+        android:layout_marginTop="@dimen/margins"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/tvLongitudeLabel"
         app:layout_constraintTop_toBottomOf="@id/tvLatitude"
@@ -66,7 +66,7 @@
         style="@style/Style.App.TitleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/margins"
         android:text="@string/address"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvLongitudeLabel" />
@@ -76,7 +76,7 @@
         style="@style/TextAppearance.AppCompat.Large"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/margins"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvAddressLabel"

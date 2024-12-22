@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Universitat Politècnica de València
+ * Copyright (c) 2022-2024 Universitat Politècnica de València
  * Authors: David de Andrés and Juan Carlos Ruiz
  *          Fault-Tolerant Systems
  *          Instituto ITACA
@@ -15,6 +15,7 @@ import android.location.Address
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +41,7 @@ class LocationViewModel @Inject constructor(
     private val _permission = MutableStateFlow("")
 
     // Current location
+    @OptIn(ExperimentalCoroutinesApi::class)
     val location = _permission.flatMapLatest { permission ->
         locationRepository.getLocationUpdates(permission)
     }.stateIn(
